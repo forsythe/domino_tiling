@@ -1,7 +1,13 @@
 import java.util.Map;
 import java.util.Random;
 import java.util.List;
-
+class Pair {
+  public int r, c;
+  public Pair(int r, int c) {
+    this.r=r;
+    this.c=c;
+  }
+}
 class Edge {
   public int r1, r2, c1, c2;
   public Edge(int r1, int c1, int r2, int c2) {
@@ -13,10 +19,9 @@ class Edge {
 }
 
 int GRID_SIZE = 25;
-int NUM_ROWS = 16;
-int NUM_COLS = 16;
+int NUM_ROWS = 20;
+int NUM_COLS = 20;
 List<Edge> edges = new ArrayList();
-
 
 /**
  * Assumption: Given two square arrays of identical dimensions, identify which bits were unset. 
