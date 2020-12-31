@@ -12,22 +12,15 @@ class Edge {
   }
 }
 
-int GRID_SIZE = 10;
-int NUM_ROWS = 20;
-int NUM_COLS = 80;
+int GRID_SIZE = 25;
+int NUM_ROWS = 16;
+int NUM_COLS = 16;
 List<Edge> edges = new ArrayList();
 
-void printArr(int[][] arr) {
-  for (int i = 0; i < arr.length; i++) {
-    for (int j = 0; j < arr[0].length; j++) {
-      System.out.print(arr[i][j] + " " );
-    }
-    System.out.println();
-  }
-}
 
 /**
- *Assumption: a and b have same dimensions, and are 1s or 0s, by finding unset bits
+ * Assumption: Given two square arrays of identical dimensions, identify which bits were unset. 
+ * Also ignore any row/col beyond max_name
  */
 List<Pair> findUnsetBits(int[][] a, int[][] b, int max_name) {
   List<Pair> ans = new ArrayList();
@@ -42,6 +35,7 @@ List<Pair> findUnsetBits(int[][] a, int[][] b, int max_name) {
 }
 
 void calculateTiling() {
+  long startTime = System.nanoTime();
   edges.clear();
   int N = (NUM_ROWS*NUM_COLS)+2;//+2 to account for source and sink
   int[][] adjMtx = new int[N][N]; 
@@ -56,12 +50,8 @@ void calculateTiling() {
   List<Integer> whiteTiles = new ArrayList();
 
   for (int r = 0; r < NUM_ROWS; r++) {
-    //System.out.println("\nr= "+r);
     //process white tiles on row
     for (int c = (r%2==0?0:1); c < NUM_COLS; c+=2) {
-      //System.out.println("c= " + c);
-      //System.out.println("white_tile_name = " + white_tile_name);
-
       adjMtx[src][white_tile_name] = 1; //source must connect to all white tiles
       nameToPair[white_tile_name] = new Pair(r, c);
       names[r][c] = white_tile_name;
@@ -70,24 +60,20 @@ void calculateTiling() {
     }
     //process black tiles on row
     for (int c = (r%2==0?1:0); c < NUM_COLS; c+=2) {
-      //System.out.println("c= " + c);
-      //System.out.println("black_tile_name = " + black_tile_name);
-
       adjMtx[black_tile_name][sink] = 1; //all black tiles flow to sink
       nameToPair[black_tile_name] = new Pair(r, c);
       names[r][c] = black_tile_name;
       black_tile_name++;
     }
   }
+
   //connect all white tiles to possible black tile neighbors
   for (int r = 0; r < NUM_ROWS; r++) {
     for (int c = 0; c < NUM_COLS; c++) {
       int cur = names[r][c];
-      //System.out.println("at (r,c)=(" + r + ", " + c + ") = " + cur);
       if (cur >= min_black_tile_name) { //skip black tiles
         continue;
       }
-      //System.out.println("white tile");
       if (r+1<NUM_ROWS) {
         int down = names[r+1][c];
         adjMtx[cur][down] = 1;
@@ -105,9 +91,7 @@ void calculateTiling() {
         adjMtx[cur][left]=1;
       }
     }
-    //System.out.println();
   }
-  //printArr(adjMtx);
   int[][] residuals = FordFulkerson.solve(N, adjMtx, src, sink);
   List<Pair> pairsOfNames = findUnsetBits(adjMtx, residuals, NUM_ROWS*NUM_COLS);
 
@@ -116,6 +100,9 @@ void calculateTiling() {
     Pair to = nameToPair[edge.c]; //overloading "c" to mean dest
     edges.add(new Edge(from.r, from.c, to.r, to.c));
   }
+  long endTime = System.nanoTime();
+  long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+  System.out.println("Solved in " + duration/1000000 + " ms");
 }
 
 void setup() {
@@ -128,8 +115,7 @@ void setup() {
   calculateTiling();
 }
 
-
-void draw() {
+void draw() {   
   for (Edge e : edges) {
     boolean isVertical = e.c1==e.c2;
     rect(
@@ -141,6 +127,6 @@ void draw() {
 }
 
 void mouseClicked() {
-  calculateTiling();
   background(0);
+  calculateTiling();
 }

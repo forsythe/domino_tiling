@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.ArrayList;
 import java.lang.Exception;
 static class FordFulkerson {
-  static boolean randomizedDfs(int N, int rGraph[][], int s, int t, int parent[]) {
+  static boolean randomizedDfs(int N, Map<Integer, Integer>[] rGraphAdjList, int s, int t, int parent[]) {
     boolean visited[] = new boolean[N];
     List<Integer> stack = new ArrayList<Integer>();
     stack.add(s);
@@ -17,13 +17,13 @@ static class FordFulkerson {
       if (visited[u])
         continue;
       visited[u] = true;
-
-      for (int v=0; v<N; v++)
+      //System.out.println(rGraphAdjList[u].size());
+      for (int child : rGraphAdjList[u].keySet())
       {
-        if (!visited[v] && rGraph[u][v] > 0)
+        if (!visited[child] && rGraphAdjList[u].getOrDefault(child, 0) > 0)
         {
-          stack.add(v);
-          parent[v] = u;
+          stack.add(child);
+          parent[child] = u;
         }
       }
     }
@@ -96,7 +96,18 @@ static class FordFulkerson {
      */
 
     //using bfs will yield a nice row solution, but randomizedDfs will be more random
-    while (randomizedDfs(N, rGraph, s, t, parent))
+    //calculate and cache an adjlist for faster dfs
+    Map<Integer, Integer>[] rGraphAdjList = new HashMap[rGraph.length];
+    for (int i = 0; i < rGraph.length; i++) {
+      rGraphAdjList[i] = new HashMap<Integer, Integer>();
+      for (int j = 0; j < rGraph[0].length; j++) {
+        if (rGraph[i][j] > 0) {
+          rGraphAdjList[i].put(j, 1);
+        }
+      }
+    }
+
+    while (randomizedDfs(N, rGraphAdjList, s, t, parent))
     {
       /* 
        *Find minimum residual capacity of the edhes
@@ -107,7 +118,7 @@ static class FordFulkerson {
       for (int v=t; v!=s; v=parent[v])
       {
         int u = parent[v];
-        pathFlow = Math.min(pathFlow, rGraph[u][v]);
+        pathFlow = Math.min(pathFlow, rGraphAdjList[u].getOrDefault(v, 0));
       }
       /* 
        * update residual capacities of the edges and
@@ -116,14 +127,23 @@ static class FordFulkerson {
       for (int v=t; v != s; v=parent[v])
       {
         int u = parent[v];
-        rGraph[u][v] -= pathFlow;
-        rGraph[v][u] += pathFlow;
+        rGraphAdjList[u].put(v, rGraphAdjList[u].getOrDefault(v, 0) - pathFlow);
+        rGraphAdjList[v].put(u, rGraphAdjList[v].getOrDefault(u, 0)+ pathFlow);
       }
       // Add path flow to overall flow
       max_flow += pathFlow;
     }
     // Return the residual graph
     System.out.println("max flow = " + max_flow);
-    return rGraph;
+
+    //update rGraph with rGraphAdjList latest data
+    int[][] rGraphNew = new int[N][N]; 
+    for (int r = 0; r < rGraphAdjList.length; r++) {
+      for (Map.Entry<Integer, Integer> childAndFlow : rGraphAdjList[r].entrySet()) {
+        rGraphNew[r][childAndFlow.getKey()] = childAndFlow.getValue();
+      }
+    }
+
+    return rGraphNew;
   }
 }
